@@ -1,32 +1,41 @@
-class PydubException(Exception):
-    """
-    Base class for any Pydub exception
-    """
+"""Exceptions module."""
 
 
-class TooManyMissingFrames(PydubException):
-    pass
+class PydubError(Exception):
+    """Base class for any Pydub exception."""
 
 
-class InvalidDuration(PydubException):
-    pass
+class TooManyMissingFramesError(PydubError):
+    """Too many missing frames."""
 
 
-class InvalidTag(PydubException):
-    pass
+class InvalidDurationError(PydubError):
+    """Invalid Duration."""
 
 
-class InvalidID3TagVersion(PydubException):
-    pass
+class InvalidTagError(PydubError):
+    """Invalid Tag."""
 
 
-class CouldntDecodeError(PydubException):
-    pass
+class InvalidID3TagVersionError(PydubError):
+    """Invalid ID D3 Tag Version."""
 
 
-class CouldntEncodeError(PydubException):
-    pass
+class CouldntDecodeError(PydubError):
+    """Could not decode."""
 
 
-class MissingAudioParameter(PydubException):
-    pass
+class CouldntEncodeError(PydubError):
+    """Could not encode."""
+
+
+class InvalidParametersError(PydubError):
+    """Invalid Parameters."""
+
+
+class MissingAudioParameterError(InvalidParametersError):
+    """Missing Audio Parameter."""
+
+
+class UnreachableCodeError(PydubError, RuntimeError):
+    """Code that should not be reached has been reached."""
