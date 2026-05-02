@@ -136,7 +136,7 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
 
     # from the itertools documentation
     def pairwise(iterable):
-        "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+        """S -> (s0,s1), (s1,s2), (s2, s3), ..."""
         a, b = itertools.tee(iterable)
         next(b, None)
         return zip(a, b)
@@ -178,5 +178,3 @@ def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):
 
     # if there is no end it should return the length of the segment
     return min(trim_ms, len(sound))
-
-

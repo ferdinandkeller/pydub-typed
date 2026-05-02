@@ -6,6 +6,7 @@ except ImportError:
     from builtins import min as builtin_min
 import math
 import struct
+
 try:
     from fractions import gcd
 except ImportError:  # Python 3.9+
@@ -19,13 +20,13 @@ class error(Exception):
 
 def _check_size(size):
     if size != 1 and size != 2 and size != 4:
-        raise error("Size should be 1, 2 or 4")
+        raise error('Size should be 1, 2 or 4')
 
 
 def _check_params(length, size):
     _check_size(size)
     if length % size != 0:
-        raise error("not a whole number of frames")
+        raise error('not a whole number of frames')
 
 
 def _sample_count(cp, size):
@@ -39,11 +40,11 @@ def _get_samples(cp, size, signed=True):
 
 def _struct_format(size, signed):
     if size == 1:
-        return "b" if signed else "B"
-    elif size == 2:
-        return "h" if signed else "H"
-    elif size == 4:
-        return "i" if signed else "I"
+        return 'b' if signed else 'B'
+    if size == 2:
+        return 'h' if signed else 'H'
+    if size == 4:
+        return 'i' if signed else 'I'
 
 
 def _get_sample(cp, size, i, signed=True):
@@ -61,26 +62,26 @@ def _put_sample(cp, size, i, val, signed=True):
 def _get_maxval(size, signed=True):
     if signed and size == 1:
         return 0x7f
-    elif size == 1:
+    if size == 1:
         return 0xff
-    elif signed and size == 2:
+    if signed and size == 2:
         return 0x7fff
-    elif size == 2:
+    if size == 2:
         return 0xffff
-    elif signed and size == 4:
+    if signed and size == 4:
         return 0x7fffffff
-    elif size == 4:
+    if size == 4:
         return 0xffffffff
 
 
 def _get_minval(size, signed=True):
     if not signed:
         return 0
-    elif size == 1:
+    if size == 1:
         return -0x80
-    elif size == 2:
+    if size == 2:
         return -0x8000
-    elif size == 4:
+    if size == 4:
         return -0x80000000
 
 
@@ -100,14 +101,13 @@ def _overflow(val, size, signed=True):
     if signed:
         offset = 2**(bits-1)
         return ((val + offset) % (2**bits)) - offset
-    else:
-        return val % (2**bits)
+    return val % (2**bits)
 
 
 def getsample(cp, size, i):
     _check_params(len(cp), size)
     if not (0 <= i < len(cp) / size):
-        raise error("Index out of range")
+        raise error('Index out of range')
     return _get_sample(cp, size, i)
 
 
@@ -162,10 +162,10 @@ def findfit(cp1, cp2):
     size = 2
 
     if len(cp1) % 2 != 0 or len(cp2) % 2 != 0:
-        raise error("Strings should be even-sized")
+        raise error('Strings should be even-sized')
 
     if len(cp1) < len(cp2):
-        raise error("First sample should be longer")
+        raise error('First sample should be longer')
 
     len1 = _sample_count(cp1, size)
     len2 = _sample_count(cp2, size)
@@ -201,10 +201,10 @@ def findfactor(cp1, cp2):
     size = 2
 
     if len(cp1) % 2 != 0:
-        raise error("Strings should be even-sized")
+        raise error('Strings should be even-sized')
 
     if len(cp1) != len(cp2):
-        raise error("Samples should be same size")
+        raise error('Samples should be same size')
 
     sample_count = _sample_count(cp1, size)
 
@@ -219,10 +219,10 @@ def findmax(cp, len2):
     sample_count = _sample_count(cp, size)
 
     if len(cp) % 2 != 0:
-        raise error("Strings should be even-sized")
+        raise error('Strings should be even-sized')
 
     if len2 < 0 or sample_count < len2:
-        raise error("Input sample should be longer")
+        raise error('Input sample should be longer')
 
     if sample_count == 0:
         return 0
@@ -383,7 +383,7 @@ def add(cp1, cp2, size):
     _check_params(len(cp1), size)
 
     if len(cp1) != len(cp2):
-        raise error("Lengths should be the same")
+        raise error('Lengths should be the same')
 
     clip = _get_clipfn(size)
     sample_count = _sample_count(cp1, size)
@@ -451,22 +451,22 @@ def lin2lin(cp, size, size2):
 def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
     _check_params(len(cp), size)
     if nchannels < 1:
-        raise error("# of channels should be >= 1")
+        raise error('# of channels should be >= 1')
 
     bytes_per_frame = size * nchannels
     frame_count = len(cp) / bytes_per_frame
 
     if bytes_per_frame / nchannels != size:
-        raise OverflowError("width * nchannels too big for a C int")
+        raise OverflowError('width * nchannels too big for a C int')
 
     if weightA < 1 or weightB < 0:
-        raise error("weightA should be >= 1, weightB should be >= 0")
+        raise error('weightA should be >= 1, weightB should be >= 0')
 
     if len(cp) % bytes_per_frame != 0:
-        raise error("not a whole number of frames")
+        raise error('not a whole number of frames')
 
     if inrate <= 0 or outrate <= 0:
-        raise error("sampling rate not > 0")
+        raise error('sampling rate not > 0')
 
     d = gcd(inrate, outrate)
     inrate /= d
@@ -481,7 +481,7 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
         d, samps = state
 
         if len(samps) != nchannels:
-            raise error("illegal state argument")
+            raise error('illegal state argument')
 
         prev_i, cur_i = zip(*samps)
         prev_i, cur_i = list(prev_i), list(cur_i)
@@ -530,24 +530,24 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
 
 
 def lin2ulaw(cp, size):
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 def ulaw2lin(cp, size):
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 def lin2alaw(cp, size):
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 def alaw2lin(cp, size):
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 def lin2adpcm(cp, size, state):
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 def adpcm2lin(cp, size, state):
-    raise NotImplementedError()
+    raise NotImplementedError
