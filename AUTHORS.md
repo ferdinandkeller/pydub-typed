@@ -99,3 +99,8 @@ Grzegorz Kotfis
 
 Pål Orby
     github: orby
+
+Ferdinand Keller
+    github: ferdinandkeller
+    web: ferdinandkeller.dev
+    email: ferdinand.keller@proton.me

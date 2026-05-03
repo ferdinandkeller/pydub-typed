@@ -1,73 +1,78 @@
-"""
-Each generator will return float samples from -1.0 to 1.0, which can be 
+"""Generators module.
+
+Each generator will return float samples from -1.0 to 1.0, which can be
 converted to actual audio with 8, 16, 24, or 32 bit depth using the
 SiganlGenerator.to_audio_segment() method (on any of it's subclasses).
 
-See Wikipedia's "waveform" page for info on some of the generators included 
+See Wikipedia's "waveform" page for info on some of the generators included
 here: http://en.wikipedia.org/wiki/Waveform
 """
 
-import math
 import array
 import itertools
+import math
 import random
+from collections.abc import Generator
+from dataclasses import dataclass
+
 from .audio_segment import AudioSegment
-from .utils import (
-    db_to_float,
-    get_frame_width,
-    get_array_type,
-    get_min_max_value
-)
+from .utils import db_to_power, get_array_type, get_frame_width, get_min_max_value
 
 
+@dataclass
+class SignalGenerator:
+    """Signal generator."""
 
-class SignalGenerator(object):
-    def __init__(self, sample_rate=44100, bit_depth=16):
-        self.sample_rate = sample_rate
-        self.bit_depth = bit_depth
+    sample_rate: int = 44100
+    bit_depth: int = 16
 
-    def to_audio_segment(self, duration=1000.0, volume=0.0):
-        """
+    def to_audio_segment(self, *, duration: float = 1000.0, volume: float = 0.0) -> AudioSegment:
+        """To audio segment.
+
         Duration in milliseconds
             (default: 1 second)
         Volume in DB relative to maximum amplitude
             (default 0.0 dBFS, which is the maximum value)
         """
-        minval, maxval = get_min_max_value(self.bit_depth)
+        _, maxval = get_min_max_value(self.bit_depth)
         sample_width = get_frame_width(self.bit_depth)
         array_type = get_array_type(self.bit_depth)
 
-        gain = db_to_float(volume)
+        gain = db_to_power(volume)
         sample_count = int(self.sample_rate * (duration / 1000.0))
 
         sample_data = (int(val * maxval * gain) for val in self.generate())
         sample_data = itertools.islice(sample_data, 0, sample_count)
 
         data = array.array(array_type, sample_data)
-        
-        try:
-            data = data.tobytes()
-        except:
-            data = data.tostring()
 
-        return AudioSegment(data=data, metadata={
-            "channels": 1,
-            "sample_width": sample_width,
-            "frame_rate": self.sample_rate,
-            "frame_width": sample_width,
-        })
+        return AudioSegment(
+            data=data.tobytes(),
+            metadata={
+                'channels': 1,
+                'sample_width': sample_width,
+                'frame_rate': self.sample_rate,
+                'frame_width': sample_width,
+            },
+        )
 
-    def generate(self):
-        raise NotImplementedError("SignalGenerator subclasses must implement the generate() method, and *should not* call the superclass implementation.")
+    def generate(self) -> Generator[float]:
+        """Generate function to be implemented."""
+        msg = (
+            'SignalGenerator subclasses must implement the generate() method, '
+            'and *should not* call the superclass implementation.'
+        )
+        raise NotImplementedError(msg)
 
 
-
+@dataclass
 class Sine(SignalGenerator):
-    def __init__(self, freq, **kwargs):
-        super(Sine, self).__init__(**kwargs)
-        self.freq = freq
+    """Signe generator."""
 
-    def generate(self):
+    freq: float = 1
+
+    def generate(self) -> Generator[float]:
+        """Generate sine waves."""
         sine_of = (self.freq * 2 * math.pi) / self.sample_rate
         sample_n = 0
         while True:
@@ -75,14 +80,15 @@ class Sine(SignalGenerator):
             sample_n += 1
 
 
-
+@dataclass
 class Pulse(SignalGenerator):
-    def __init__(self, freq, duty_cycle=0.5, **kwargs):
-        super(Pulse, self).__init__(**kwargs)
-        self.freq = freq
-        self.duty_cycle = duty_cycle
+    """Pulse generator."""
 
-    def generate(self):
+    freq: float = 1
+    duty_cycle: float = 0.5
+
+    def generate(self) -> Generator[float]:
+        """Generate pulse."""
         sample_n = 0
 
         # in samples
@@ -97,21 +103,20 @@ class Pulse(SignalGenerator):
             sample_n += 1
 
 
-
+@dataclass
 class Square(Pulse):
-    def __init__(self, freq, **kwargs):
-        kwargs['duty_cycle'] = 0.5
-        super(Square, self).__init__(freq, **kwargs)
+    """Square generator."""
 
 
-
+@dataclass
 class Sawtooth(SignalGenerator):
-    def __init__(self, freq, duty_cycle=1.0, **kwargs):
-        super(Sawtooth, self).__init__(**kwargs)
-        self.freq = freq
-        self.duty_cycle = duty_cycle
+    """Sawtooth generator."""
 
-    def generate(self):
+    freq: float = 1
+    duty_cycle: float = 1.0
+
+    def generate(self) -> Generator[float]:
+        """Generate sawtooths."""
         sample_n = 0
 
         # in samples
@@ -129,14 +134,16 @@ class Sawtooth(SignalGenerator):
             sample_n += 1
 
 
-
+@dataclass
 class Triangle(Sawtooth):
-    def __init__(self, freq, **kwargs):
-        kwargs['duty_cycle'] = 0.5
-        super(Triangle, self).__init__(freq, **kwargs)
+    """Triangle generator."""
 
 
+@dataclass
 class WhiteNoise(SignalGenerator):
-    def generate(self):
+    """White noise generator."""
+
+    def generate(self) -> Generator[float]:
+        """Generate white noise."""
         while True:
-            yield (random.random() * 2) - 1.0
+            yield (random.random() * 2) - 1.0  # noqa: S311

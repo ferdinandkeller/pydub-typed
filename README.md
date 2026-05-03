@@ -1,22 +1,28 @@
-# Pydub [![Build Status](https://travis-ci.org/jiaaro/pydub.svg?branch=master)](https://travis-ci.org/jiaaro/pydub) [![Build status](https://ci.appveyor.com/api/projects/status/gy1ucp9o5khq7fqi/branch/master?svg=true)](https://ci.appveyor.com/project/jiaaro/pydub/branch/master)
+# Pydub — Now Typed 🥳
 
-Pydub lets you do stuff to audio in a way that isn't stupid.
+This is a fully-typed fork of the original pydub-typed project.
+
+We only target python 3.13+.
+
+If you find any discrepancies with the original library, **create an issue**, it will be dealt with quickly (or even better submit a PR).
+
+Pydub-typed lets you do stuff to audio in a way that isn't stupid.
 
 **Stuff you might be looking for**:
- - [Installing Pydub](https://github.com/jiaaro/pydub#installation)
- - [API Documentation](https://github.com/jiaaro/pydub/blob/master/API.markdown)
- - [Dependencies](https://github.com/jiaaro/pydub#dependencies)
- - [Playback](https://github.com/jiaaro/pydub#playback)
- - [Setting up ffmpeg](https://github.com/jiaaro/pydub#getting-ffmpeg-set-up)
- - [Questions/Bugs](https://github.com/jiaaro/pydub#bugs--questions)
- 
 
-##  Quickstart
+- [Installing Pydub](https://github.com/ferdinandkeller/pydub-typed#installation)
+- [API Documentation](https://github.com/ferdinandkeller/pydub-typed/blob/master/API.markdown)
+- [Dependencies](https://github.com/ferdinandkeller/pydub-typed#dependencies)
+- [Playback](https://github.com/ferdinandkeller/pydub-typed#playback)
+- [Setting up ffmpeg](https://github.com/ferdinandkeller/pydub-typed#getting-ffmpeg-set-up)
+- [Questions/Bugs](https://github.com/ferdinandkeller/pydub-typed#bugs--questions)
+
+## Quickstart
 
 Open a WAV file
 
 ```python
-from pydub import AudioSegment
+from pydub_typed import AudioSegment
 
 song = AudioSegment.from_wav("never_gonna_give_you_up.wav")
 ```
@@ -41,7 +47,7 @@ aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aac")
 Slice audio:
 
 ```python
-# pydub does things in milliseconds
+# pydub-typed does things in milliseconds
 ten_seconds = 10 * 1000
 
 first_10_seconds = song[:ten_seconds]
@@ -92,8 +98,7 @@ Repeat
 do_it_over = with_style * 2
 ```
 
-Fade (note that you can chain operations because everything returns
-an AudioSegment)
+Fade (note that you can chain operations because everything returns an AudioSegment)
 
 ```python
 # 2 sec fade in, 3 sec fade out
@@ -112,17 +117,13 @@ Save the results with tags (metadata)
 awesome.export("mashup.mp3", format="mp3", tags={'artist': 'Various artists', 'album': 'Best of 2011', 'comments': 'This album is awesome!'})
 ```
 
-You can pass an optional bitrate argument to export using any syntax ffmpeg 
-supports.
+You can pass an optional bitrate argument to export using any syntax ffmpeg supports.
 
 ```python
 awesome.export("mashup.mp3", format="mp3", bitrate="192k")
 ```
 
-Any further arguments supported by ffmpeg can be passed as a list in a 
-'parameters' argument, with switch first, argument second. Note that no 
-validation takes place on these parameters, and you may be limited by what 
-your particular build of ffmpeg/avlib supports.
+Any further arguments supported by ffmpeg can be passed as a list in a 'parameters' argument, with switch first, argument second. Note that no validation takes place on these parameters, and you may be limited by what your particular build of ffmpeg/avlib supports.
 
 ```python
 # Use preset mp3 quality 0 (equivalent to lame V0)
@@ -134,9 +135,7 @@ awesome.export("mashup.mp3", format="mp3", parameters=["-ac", "2", "-vol", "150"
 
 ## Debugging
 
-Most issues people run into are related to converting between formats using
-ffmpeg/avlib. Pydub provides a logger that outputs the subprocess calls to 
-help you track down issues:
+Most issues people run into are related to converting between formats using ffmpeg/avlib. Pydub-typed provides a logger that outputs the subprocess calls to help you track down issues:
 
 ```python
 >>> import logging
@@ -150,53 +149,44 @@ subprocess.call(['ffmpeg', '-y', '-i', '/var/folders/71/42k8g72x4pq09tfp920d033r
 <pydub.audio_segment.AudioSegment object at 0x101b43e10>
 ```
 
-Don't worry about the temporary files used in the conversion. They're cleaned up 
-automatically.
+Don't worry about the temporary files used in the conversion. They're cleaned up automatically.
 
 ## Bugs & Questions
 
-You can file bugs in our [github issues tracker](https://github.com/jiaaro/pydub/issues), 
-and ask any technical questions on 
-[Stack Overflow using the pydub tag](http://stackoverflow.com/questions/ask?tags=pydub). 
-We keep an eye on both.
+You can file bugs in our [github issues tracker](https://github.com/ferdinandkeller/pydub-typed/issues).
 
 ## Installation
 
-Installing pydub is easy, but don't forget to install ffmpeg/avlib (the next section in this doc)
+Installing pydub-typed is easy, but don't forget to install ffmpeg/avlib (the next section in this doc)
 
-    pip install pydub
+```bash
+pip install pydub-typed
+```
 
-Or install the latest dev version from github (or replace `@master` with a [release version like `@v0.12.0`](https://github.com/jiaaro/pydub/releases))…
+Or install the latest dev version from github.
 
-    pip install git+https://github.com/jiaaro/pydub.git@master
+```bash
+pip install git+https://github.com/ferdinandkeller/pydub-typed.git@master
+```
 
--OR-
-
-    git clone https://github.com/jiaaro/pydub.git
-
--OR-
-
-Copy the pydub directory into your python path. Zip 
-[here](https://github.com/jiaaro/pydub/zipball/master)
+> **pydub-typed only targets python 3.13+.**
 
 ## Dependencies
 
-You can open and save WAV files with pure python. For opening and saving non-wav 
-files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or 
-[libav](http://libav.org/).
+You can open and save WAV files with pure python. For opening and saving non-wav — like — you'll need [ffmpeg](http://www.ffmpeg.org/) or [libav](http://libav.org/).
 
 ### Playback
 
 You can play audio if you have one of these installed (simpleaudio _strongly_ recommended, even if you are installing ffmpeg/libav):
 
- - [simpleaudio](https://simpleaudio.readthedocs.io/en/latest/)
- - [pyaudio](https://people.csail.mit.edu/hubert/pyaudio/docs/#)
- - ffplay (usually bundled with ffmpeg, see the next section)
- - avplay (usually bundled with libav, see the next section)
- 
+- [simpleaudio](https://simpleaudio.readthedocs.io/en/latest/)
+- [pyaudio](https://people.csail.mit.edu/hubert/pyaudio/docs/#)
+- ffplay (usually bundled with ffmpeg, see the next section)
+- avplay (usually bundled with libav, see the next section)
+
 ```python
-from pydub import AudioSegment
-from pydub.playback import play
+from pydub_typed import AudioSegment
+from pydub_typed.playback import play
 
 sound = AudioSegment.from_file("mysound.wav", format="wav")
 play(sound)
@@ -211,10 +201,7 @@ Mac (using [homebrew](http://brew.sh)):
 ```bash
 # libav
 brew install libav
-
-####    OR    #####
-
-# ffmpeg
+# or ffmpeg
 brew install ffmpeg
 ```
 
@@ -223,10 +210,7 @@ Linux (using aptitude):
 ```bash
 # libav
 apt-get install libav-tools libavcodec-extra
-
-####    OR    #####
-
-# ffmpeg
+# or ffmpeg
 apt-get install ffmpeg libavcodec-extra
 ```
 
@@ -234,12 +218,11 @@ Windows:
 
 1. Download and extract libav from [Windows binaries provided here](http://builds.libav.org/windows/).
 2. Add the libav `/bin` folder to your PATH envvar
-3. `pip install pydub`
+3. `pip install pydub-typed`
 
 ## Important Notes
 
 `AudioSegment` objects are [immutable](http://www.devshed.com/c/a/Python/String-and-List-Python-Object-Types/1/)
-
 
 ### Ogg exporting and default codecs
 
@@ -252,7 +235,7 @@ When no codec is specified exporting to `ogg` will _default_ to using `vorbis`
 as a convenience. That is:
 
 ```python
-from pydub import AudioSegment
+from pydub_typed import AudioSegment
 song = AudioSegment.from_mp3("test/data/test1.mp3")
 song.export("out.ogg", format="ogg")  # Is the same as:
 song.export("out.ogg", format="ogg", codec="libvorbis")
@@ -260,12 +243,12 @@ song.export("out.ogg", format="ogg", codec="libvorbis")
 
 ## Example Use
 
-Suppose you have a directory filled with *mp4* and *flv* videos and you want to convert all of them to *mp3* so you can listen to  them on your mp3 player.
+Suppose you have a directory filled with _mp4_ and _flv_ videos and you want to convert all of them to _mp3_ so you can listen to  them on your mp3 player.
 
 ```python
 import os
 import glob
-from pydub import AudioSegment
+from pydub_typed import AudioSegment
 
 video_dir = '/home/johndoe/downloaded_videos/'  # Path where the videos are located
 extension_list = ('*.mp4', '*.flv')
@@ -281,7 +264,7 @@ for extension in extension_list:
 
 ```python
 from glob import glob
-from pydub import AudioSegment
+from pydub_typed import AudioSegment
 
 playlist_songs = [AudioSegment.from_mp3(mp3_file) for mp3_file in glob("*.mp3")]
 
@@ -304,30 +287,6 @@ playlist = playlist.fade_out(30)
 playlist_length = len(playlist) / (1000*60)
 
 # lets save it!
-with open("%s_minute_playlist.mp3" % playlist_length, 'wb') as out_f:
+with open(f"{playlist_length}_minute_playlist.mp3", 'wb') as out_f:
     playlist.export(out_f, format='mp3')
 ```
-
-## License ([MIT License](http://opensource.org/licenses/mit-license.php))
-
-Copyright © 2011 James Robert, http://jiaaro.com
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
