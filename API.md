@@ -2,15 +2,14 @@
 
 This document is a work in progress.
 
-If you're looking for some functionality in particular, it's a good idea to take a look at the [source code](https://github.com/jiaaro/pydub). Core functionality is mostly in `pydub/audio_segment.py` – a number of `AudioSegment` methods are in the `pydub/effects.py` module, and added to `AudioSegment` via the effect registration process (the `register_pydub_effect()` decorator function)
+If you're looking for some functionality in particular, it's a good idea to take a look at the [source code](https://github.com/ferdinandkeller/pydub-typed). Core functionality is mostly in `pydub_typed/audio_segment.py` — a number of effects methods are in the `pydub_typed/effects.py` module, and can be used using piping.
 
 Currently Undocumented:
 
 - Playback (`pydub.playback`)
 - Signal Processing (compression, EQ, normalize, speed change - `pydub.effects`, `pydub.scipy_effects`)
 - Signal generators (Sine, Square, Sawtooth, Whitenoise, etc - `pydub.generators`)
-- Effect registration system (basically the `pydub.utils.register_pydub_effect` decorator)
-
+- Piping (`audio_segment.pipe(fn1, *args1, **kwargs1).pipe(fn2, *args2, **kwargs2)`)
 
 ## AudioSegment()
 
@@ -103,7 +102,6 @@ The first argument is the path (as a string) of the file to read, **or** a file 
 - `duration` | example: `2.5` | default: `None`
   Number of seconds to be loaded. If `None`, full audio will be loaded.
 
-
 ### AudioSegment(…).export()
 
 Write the `AudioSegment` object to a file – returns a file handle of the output file (you don't have to do anything with it, though).
@@ -147,7 +145,6 @@ The first argument is the location (as a string) to write the output, **or** a f
 - `cover` | example: `"/path/to/imgfile.png"`
   Allows you to supply a cover image (path to the image file). Currently, only MP3 files allow this keyword argument. Cover image must be a jpeg, png, bmp, or tiff file.
 
-
 ### AudioSegment.empty()
 
 Creates a zero-duration `AudioSegment`.
@@ -160,6 +157,7 @@ len(empty) == 0
 ```
 
 This is useful for aggregation loops:
+
 ```python
 from pydub import AudioSegment
 
@@ -494,6 +492,7 @@ sound1 = AudioSegment.from_file("sound1.wav")
 # make left channel 6dB quieter and right channe 2dB louder
 stereo_balance_adjusted = sound1.apply_gain_stereo(-6, +2)
 ```
+
 Apply gain to the left and right channel of a stereo `AudioSegment`. If the `AudioSegment` is mono, it will be converted to stereo before applying the gain.
 
 Both gain arguments are specified in dB.
