@@ -1,4 +1,5 @@
-"""
+"""Scipy effects module.
+
 This module provides scipy versions of high_pass_filter, and low_pass_filter
 as well as an additional band_pass_filter.
 
@@ -9,17 +10,30 @@ will be used when calling audio_segment.high_pass_filter() and
 audio_segment.high_pass_filter() instead of the slower, less powerful versions
 provided by pydub.effects.
 """
-from scipy.signal import butter, sosfilt
 
-from .utils import ms_to_stereo, register_pydub_effect, stereo_to_ms
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Literal
+
+from scipy.signal import butter, sosfilt  # pyright: ignore[reportMissingModuleSource, reportUnknownVariableType]
+
+from .audio_segment import AudioSegment
+from .effects import apply_mono_filter_to_each_channel
+from .exceptions import PydubError
 
 
-def _mk_butter_filter(freq, type, order):
-    """
+def _mk_butter_filter[T: AudioSegment](
+    freq: float | list[float],
+    filter_type: Literal['lowpass', 'highpass', 'band'],
+    order: int,
+) -> Callable[[T], T]:
+    """Make butter filter.
+
     Args:
         freq: The cutoff frequency for highpass and lowpass filters. For
             band filters, a list of [low_cutoff, high_cutoff]
-        type: "lowpass", "highpass", or "band"
+        filter_type: "lowpass", "highpass", or "band"
         order: nth order butterworth filter (default: 5th order). The
             attenuation is -6dB/octave beyond the cutoff frequency (for 1st
             order). A Higher order filter will have more attenuation, each level
@@ -28,147 +42,101 @@ def _mk_butter_filter(freq, type, order):
 
     Returns:
         function which can filter a mono audio segment
-
     """
-    def filter_fn(seg):
-        assert seg.channels == 1
+
+    def filter_fn(seg: T) -> T:
+        if seg.channels != 1:
+            msg = 'The filter only works on mono audio.'
+            PydubError(msg)
 
         nyq = 0.5 * seg.frame_rate
-        try:
-            freqs = [f / nyq for f in freq]
-        except TypeError:
-            freqs = freq / nyq
+        freqs = [f / nyq for f in freq] if isinstance(freq, list) else freq / nyq
 
-        sos = butter(order, freqs, btype=type, output='sos')
-        y = sosfilt(sos, seg.get_array_of_samples())
+        sos = butter(order, freqs, btype=filter_type, output='sos')  # pyright: ignore[reportUnknownVariableType]
+        y = sosfilt(sos, seg.get_array_of_samples())  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]
 
-        return seg._spawn(y.astype(seg.array_type))
+        return seg._spawn(y.astype(seg.array_type))  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportPrivateUsage] # noqa: SLF001
 
     return filter_fn
 
 
-@register_pydub_effect
-def band_pass_filter(seg, low_cutoff_freq, high_cutoff_freq, order=5):
+def band_pass_filter[T: AudioSegment](seg: T, low_cutoff_freq: float, high_cutoff_freq: float, order: int = 5) -> T:
+    """Band pass filter."""
     filter_fn = _mk_butter_filter([low_cutoff_freq, high_cutoff_freq], 'band', order=order)
-    return seg.apply_mono_filter_to_each_channel(filter_fn)
+    return seg.pipe(apply_mono_filter_to_each_channel, filter_fn)
 
 
-@register_pydub_effect
-def high_pass_filter(seg, cutoff_freq, order=5):
+def high_pass_filter[T: AudioSegment](seg: T, cutoff_freq: float, order: int = 5) -> T:
+    """High pass filter."""
     filter_fn = _mk_butter_filter(cutoff_freq, 'highpass', order=order)
-    return seg.apply_mono_filter_to_each_channel(filter_fn)
+    return seg.pipe(apply_mono_filter_to_each_channel, filter_fn)
 
 
-@register_pydub_effect
-def low_pass_filter(seg, cutoff_freq, order=5):
+def low_pass_filter[T: AudioSegment](seg: T, cutoff_freq: float, order: int = 5) -> T:
+    """Low pass filter."""
     filter_fn = _mk_butter_filter(cutoff_freq, 'lowpass', order=order)
-    return seg.apply_mono_filter_to_each_channel(filter_fn)
+    return seg.pipe(apply_mono_filter_to_each_channel, filter_fn)
 
 
-@register_pydub_effect
-def _eq(seg, focus_freq, bandwidth=100, mode='peak', gain_dB=0, order=2):
-    """
+def eq[T: AudioSegment](
+    seg: T,
+    focus_freq: float,
+    bandwidth: int = 100,
+    filter_mode: Literal['peak', 'high_shelf', 'low_shelf'] = 'peak',
+    gain_db: float = 0,
+    order: int = 2,
+) -> T:
+    """Equalize.
+
     Args:
-        focus_freq - middle frequency or known frequency of band (in Hz)
-        bandwidth - range of the equalizer band
-        mode - Mode of Equalization(Peak/Notch(Bell Curve),High Shelf, Low Shelf)
-        order - Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
-    
+        seg:
+            Audio segment.
+        focus_freq:
+            middle frequency or known frequency of band (in Hz)
+        bandwidth:
+            range of the equalizer band
+        filter_mode:
+            Mode of Equalization(Peak/Notch(Bell Curve),High Shelf, Low Shelf)
+        gain_db:
+            dB gain
+        order:
+            Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
+
     Returns:
         Equalized/Filtered AudioSegment
     """
     filt_mode = ['peak', 'low_shelf', 'high_shelf']
-    if mode not in filt_mode:
-        raise ValueError('Incorrect Mode Selection')
+    if filter_mode not in filt_mode:
+        msg = 'Incorrect Mode Selection'
+        raise ValueError(msg)
 
-    if gain_dB >= 0:
-        if mode == 'peak':
-            sec = band_pass_filter(seg, focus_freq - bandwidth/2, focus_freq + bandwidth/2, order = order)
-            seg = seg.overlay(sec - (3 - gain_dB))
-            return seg
+    if gain_db >= 0:
+        if filter_mode == 'peak':
+            sec = band_pass_filter(seg, focus_freq - bandwidth / 2, focus_freq + bandwidth / 2, order=order)
+            return seg.overlay(sec - (3 - gain_db))
 
-        if mode == 'low_shelf':
+        if filter_mode == 'low_shelf':
             sec = low_pass_filter(seg, focus_freq, order=order)
-            seg = seg.overlay(sec - (3 - gain_dB))
-            return seg
+            return seg.overlay(sec - (3 - gain_db))
 
-        if mode == 'high_shelf':
+        if filter_mode == 'high_shelf':
             sec = high_pass_filter(seg, focus_freq, order=order)
-            seg = seg.overlay(sec - (3 - gain_dB))
-            return seg
+            return seg.overlay(sec - (3 - gain_db))
 
-    if gain_dB < 0:
-        if mode == 'peak':
-            sec = high_pass_filter(seg, focus_freq - bandwidth/2, order=order)
-            seg = seg.overlay(sec - (3 + gain_dB)) + gain_dB
-            sec = low_pass_filter(seg, focus_freq + bandwidth/2, order=order)
-            seg = seg.overlay(sec - (3 + gain_dB)) + gain_dB
-            return seg
+    if gain_db < 0:
+        if filter_mode == 'peak':
+            sec = high_pass_filter(seg, focus_freq - bandwidth / 2, order=order)
+            seg = seg.overlay(sec - (3 + gain_db)) + gain_db
+            sec = low_pass_filter(seg, focus_freq + bandwidth / 2, order=order)
+            return seg.overlay(sec - (3 + gain_db)) + gain_db
 
-        if mode == 'low_shelf':
+        if filter_mode == 'low_shelf':
             sec = high_pass_filter(seg, focus_freq, order=order)
-            seg = seg.overlay(sec - (3 + gain_dB)) + gain_dB
-            return seg
+            return seg.overlay(sec - (3 + gain_db)) + gain_db
 
-        if mode=='high_shelf':
-            sec=low_pass_filter(seg, focus_freq, order=order)
-            seg=seg.overlay(sec - (3 + gain_dB)) +gain_dB
-            return seg
+        if filter_mode == 'high_shelf':
+            sec = low_pass_filter(seg, focus_freq, order=order)
+            return seg.overlay(sec - (3 + gain_db)) + gain_db
 
-
-@register_pydub_effect
-def eq(seg, focus_freq, bandwidth=100, channel_mode='L+R', filter_mode='peak', gain_dB=0, order=2):
-    """
-    Args:
-        focus_freq - middle frequency or known frequency of band (in Hz)
-        bandwidth - range of the equalizer band
-        channel_mode - Select Channels to be affected by the filter.
-            L+R - Standard Stereo Filter
-            L - Only Left Channel is Filtered
-            R - Only Right Channel is Filtered
-            M+S - Blumlien Stereo Filter(Mid-Side)
-            M - Only Mid Channel is Filtered
-            S - Only Side Channel is Filtered
-            Mono Audio Segments are completely filtered.
-        filter_mode - Mode of Equalization(Peak/Notch(Bell Curve),High Shelf, Low Shelf)
-        order - Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
-    
-    Returns:
-        Equalized/Filtered AudioSegment
-    """
-    channel_modes = ['L+R', 'M+S', 'L', 'R', 'M', 'S']
-    if channel_mode not in channel_modes:
-        raise ValueError('Incorrect Channel Mode Selection')
-
-    if seg.channels == 1:
-        return _eq(seg, focus_freq, bandwidth, filter_mode, gain_dB, order)
-
-    if channel_mode == 'L+R':
-        return _eq(seg, focus_freq, bandwidth, filter_mode, gain_dB, order)
-
-    if channel_mode == 'L':
-        seg = seg.split_to_mono()
-        seg = [_eq(seg[0], focus_freq, bandwidth, filter_mode, gain_dB, order), seg[1]]
-        return AudioSegment.from_mono_audio_segements(seg[0], seg[1])
-
-    if channel_mode == 'R':
-        seg = seg.split_to_mono()
-        seg = [seg[0], _eq(seg[1], focus_freq, bandwidth, filter_mode, gain_dB, order)]
-        return AudioSegment.from_mono_audio_segements(seg[0], seg[1])
-
-    if channel_mode == 'M+S':
-        seg = stereo_to_ms(seg)
-        seg = _eq(seg, focus_freq, bandwidth, filter_mode, gain_dB, order)
-        return ms_to_stereo(seg)
-
-    if channel_mode == 'M':
-        seg = stereo_to_ms(seg).split_to_mono()
-        seg = [_eq(seg[0], focus_freq, bandwidth, filter_mode, gain_dB, order), seg[1]]
-        seg = AudioSegment.from_mono_audio_segements(seg[0], seg[1])
-        return ms_to_stereo(seg)
-
-    if channel_mode == 'S':
-        seg = stereo_to_ms(seg).split_to_mono()
-        seg = [seg[0], _eq(seg[1], focus_freq, bandwidth, filter_mode, gain_dB, order)]
-        seg = AudioSegment.from_mono_audio_segements(seg[0], seg[1])
-        return ms_to_stereo(seg)
+    msg = 'Unknown configuration.'
+    raise PydubError(msg)
